@@ -1,10 +1,15 @@
+import { useState } from "react"
+import Login from "./pages/Login"
+import Chat from "./pages/Chat"
+
 function App() {
+  const [user, setUser] = useState(null)
+
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
-      <h1>Realtime Chat App</h1>
-      <p>Frontend setup completed.</p>
+    <div>
+      {user ? <Chat user={user} /> : <Login setUser={setUser} />}
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
