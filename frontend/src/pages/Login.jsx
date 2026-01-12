@@ -3,9 +3,17 @@ import { useState } from "react"
 function Login({ setUser }) {
   const [email, setEmail] = useState("")
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!email) return
-    setUser(email)
+
+    const res = await fetch("http://localhost:5000/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+
+    const data = await res.json()
+    setUser(data)
   }
 
   return (
@@ -17,7 +25,6 @@ function Login({ setUser }) {
         placeholder="Enter email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        style={{ display: "block", marginBottom: "10px" }}
       />
 
       <button onClick={handleLogin}>Login</button>
