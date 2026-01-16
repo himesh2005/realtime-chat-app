@@ -1,35 +1,76 @@
-import { useState } from "react"
+import { useState } from "react";
+import { loginUser, registerUser } from "../services/api";
 
-function Login({ setUser }) {
-  const [email, setEmail] = useState("")
+function Login({ onLoginSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  async function handleLogin() {
-    if (!email) return
+  const [mode, setMode] = useState("login"); // "login" or "register"
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const res = await fetch("http://localhost:5000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    })
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const data = await res.json()
-    setUser(data)
+    try {
+      if (mode === "register") {
+        await registerUser(email, password);
+        setMode("login");
+        setError("Registered. Now login.");
+      } else {
+        const data = await loginUser(email, password);
+        onLoginSuccess(data);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h2>Login</h2>
+    <div style={{ padding: 40 }}>
+      <h2>{mode === "login" ? "Login" : "Register"}</h2>
 
-      <input
-        type="email"
-        placeholder="Enter email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <br />
+        <br />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <br />
+        <br />
+        <button type="submit" disabled={loading}>
+          {loading ? "Please wait..." : mode === "login" ? "Login" : "Register"}
+        </button>
+      </form>
 
-      <button onClick={handleLogin}>Login</button>
+      <br />
+
+      <button onClick={() => setMode(mode === "login" ? "register" : "login")}>
+        Switch to {mode === "login" ? "Register" : "Login"}
+      </button>
+
+      {error && (
+        <p style={{ marginTop: 10 }}>
+          {error}
+        </p>
+      )}
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;
