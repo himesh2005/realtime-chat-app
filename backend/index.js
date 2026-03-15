@@ -7,10 +7,13 @@ const cors = require("cors")
 const mongoose = require("mongoose");
 const app = express()
 const auth = require("./middleware/auth.js");
+const Message = require("./models/Message");
+const messageRoutes = require("./routes/messages");
 
-
+app.use("/api/messages", messageRoutes);
 app.use(cors())
 app.use(express.json())
+
 
 app.get("/", (req, res) => {
   res.send("Backend is running")
@@ -21,7 +24,7 @@ app.get("/api/me", auth, (req, res) => {
 });
 
 const authRoutes = require("./routes/auth");
-
+console.log("messagesRoutes is:", messageRoutes);
 app.use("/api/auth", authRoutes);
 
 const PORT = 5000
@@ -31,7 +34,6 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: { origin: "http://localhost:5173" },
 });
@@ -39,8 +41,6 @@ io.on("connection_error", (err) => {
   console.log("Socket connection_error:", err.message);
 });
 
-
-// Map userId -> socketId
 const onlineUsers = new Map();
 
 // Authenticate socket
@@ -61,7 +61,14 @@ io.on("connection", (socket) => {
   onlineUsers.set(socket.userId, socket.id);
   console.log("User connected:", socket.userId);
 
-  socket.on("private_message", ({ toUserId, text }) => {
+  socket.on("private_message", async ({ toUserId, text }) => {
+    // Save to DB
+    await Message.create({
+      from: socket.userId,
+      to: toUserId,
+      text,
+    });
+
     const toSocketId = onlineUsers.get(toUserId);
     if (!toSocketId) {
       socket.emit("error_message", { message: "User offline" });
@@ -83,3 +90,4 @@ io.on("connection", (socket) => {
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
